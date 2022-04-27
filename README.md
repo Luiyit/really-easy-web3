@@ -3,12 +3,12 @@ This package simplifies the interactions of web3 applications with smart contrac
 
 The package implements a series of providers, hooks and utils to handle the basic and common web3's stuff. You only need to take care of the business logic of your application.
 
-### Installation / EC6 import
-Add it into your package.json
+### Installation / ES6 import
+Add it into your package.json.\
 `npm i really-easy-web3`
 
-Import it in your project.
-`import * as rsw3 from 'really-easy-web3'`
+Import it in your project.\
+`import * as rsw3 from 'really-easy-web3'`.\
 `import { ... } from 'really-easy-web3'`
 
 ### Dependencies
