@@ -26,4 +26,6 @@ Import it in your project.\
 
 ### Todo
 - Finish the `readme.md` 😛
+- Exclude .map from production build
+- Use `ethers` like devDependency
 - Coming soon...
