@@ -1,0 +1,1 @@
+export { prettyAddress } from './lib/utils/address';
