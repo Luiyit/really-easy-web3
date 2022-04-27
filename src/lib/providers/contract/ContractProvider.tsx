@@ -70,14 +70,4 @@ const ContractProvider = ({ children, contracts, provider }: IAccountProps) => {
   );
 };
 
-// ContractProvider.propTypes = {
-//   children: PropTypes.any.isRequired,
-//   contracts: PropTypes.arrayOf(PropTypes.shape({
-//     name: PropTypes.string.isRequired,
-//     address: PropTypes.string.isRequired,
-//     abi: PropTypes.array.isRequired,
-//   })).isRequired,
-//   provider: PropTypes.oneOf(providers),
-// };
-
 export default ContractProvider;

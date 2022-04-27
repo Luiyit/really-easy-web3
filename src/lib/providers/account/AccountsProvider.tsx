@@ -181,12 +181,4 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   );
 };
 
-// AccountsProvider.propTypes = {
-//   children: PropTypes.any.isRequired,
-//   connectOnLoad: PropTypes.bool,
-//   autoConnect: PropTypes.bool,
-//   simulateReconnect: PropTypes.bool,
-//   targetNetworkId: PropTypes.string,
-// };
-
 export default AccountsProvider;
