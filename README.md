@@ -28,4 +28,6 @@ Import it in your project.\
 - Finish the `readme.md` 😛
 - Exclude .map from production build
 - Use `ethers` like devDependency
+- change targetNetworkId to targetChainId => hexadecimal formal
+- Do not auto change network before the wallet is connected!
 - Coming soon...
