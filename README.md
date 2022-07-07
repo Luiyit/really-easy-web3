@@ -30,4 +30,5 @@ Import it in your project.\
 - Use `ethers` like devDependency
 - change targetNetworkId to targetChainId => hexadecimal formal
 - Do not auto change network before the wallet is connected!
+- Check if metamask is not installed and prevent errors
 - Coming soon...

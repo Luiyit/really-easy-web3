@@ -18,11 +18,13 @@ const emptyChainState: IChainState = {
 
 interface IMetamaskState {
   isMetaMaskInstalled: boolean, 
-  isMetamaskUnlocked: boolean
+  isMetamaskUnlocked: boolean,
+  isReady: Boolean,
 }
 const emptyMetamaskState: IMetamaskState = {
   isMetaMaskInstalled: false,
   isMetamaskUnlocked: false,
+  isReady: false,
 }
 
 interface IAcctContext extends IChainState, IMetamaskState{
@@ -31,6 +33,7 @@ interface IAcctContext extends IChainState, IMetamaskState{
   disconnect: Function,
   refreshConnection: Function,
   accounts: string[],
+  loading: Boolean,
 }
 
 export const AccountContext = React.createContext({} as IAcctContext);
@@ -55,6 +58,7 @@ interface IAccountProps {
 // TODO: Create Docs
 const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconnect, targetNetworkId }: IAccountProps) => {
   const [accounts, setAccounts] = useState<string[]>([]);
+  const [loading, setLoading] = useState<Boolean>(true);
 
   const [state, setState] = useState<IState>(getInitialState());
   const [chainState, setChainState] = useState<IChainState>(emptyChainState);
@@ -95,7 +99,9 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
 
   const initialize = async () => {
     requestMetamaskState();
-    if (!wallet.isMetaMaskInstalled()) return;
+    if (!wallet.isMetaMaskInstalled())
+      return setLoading(false)
+    
     requestAccounts();
     requestChainState();
   };
@@ -103,7 +109,8 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   const requestMetamaskState = async () => {
     const isMetaMaskInstalled = wallet.isMetaMaskInstalled();
     const isMetamaskUnlocked = await wallet.isMetamaskUnlocked();
-    setMetamaskState({isMetaMaskInstalled, isMetamaskUnlocked});
+    const isReady = isMetaMaskInstalled && isMetamaskUnlocked;
+    setMetamaskState({isMetaMaskInstalled, isMetamaskUnlocked, isReady});
   }
   
   const requestChainState = async () => {
@@ -114,7 +121,10 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
 
   const requestAccounts = async () => {
     const isUnlocked = await wallet.isMetamaskUnlocked();
-    if(!isUnlocked) return observeMetamaskUnlock();
+    if(!isUnlocked){
+      setLoading(false);
+      return observeMetamaskUnlock();
+    }
 
     const accounts = await ethActions.getCurrentAccounts();
     const isFakeDisconnected = storage.isFakeDisconnected();
@@ -135,6 +145,7 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
     }
     
     setAccountsState(accounts);
+    setLoading(false);
   }
 
   const setAccountsState = (accounts:string[] = [], fakeDisconnected:boolean = false, defaultAccount:number = 0) => {
@@ -158,6 +169,8 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   }
 
   const connect = async () => {
+    if(!metamaskState.isReady) return;
+    
     const isFakeDisconnected = storage.isFakeDisconnected();
     const accounts = await ethActions.requestAccounts(true, isFakeDisconnected && simulateReconnect, targetNetworkId);
     setAccounts(accounts);
@@ -173,6 +186,7 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
     ...state, 
     ...chainState,
     ...metamaskState,
+    loading,
   }
   return (
     <AccountContext.Provider value={contextValue} >
