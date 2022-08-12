@@ -98,12 +98,14 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   };
 
   const initialize = async () => {
-    requestMetamaskState();
+    await requestMetamaskState();
     if (!wallet.isMetaMaskInstalled())
       return setLoading(false)
     
-    requestAccounts();
-    requestChainState();
+    await requestAccounts();
+    console.log("Accounts")
+    console.log(accounts)
+    if (accounts.length) requestChainState();
   };
 
   const requestMetamaskState = async () => {

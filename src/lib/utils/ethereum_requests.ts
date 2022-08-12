@@ -1,3 +1,5 @@
+import { isNonNullChain } from "typescript";
+
 declare var window: any;
 
 // TODO: Add try catch to all calls. Similar way used in contractInteractor
@@ -26,9 +28,30 @@ declare var window: any;
 //   }
 
 
+const ethereumProvider = () => {
+  // Some wallet extension is installed
+  if(window.ethereum){
+
+    // More than one wallet extension is installed
+    if(window.ethereum.providers){
+      return window.ethereum.providers[0]
+    }
+
+    window.ethereum;
+  }
+
+  return null;
+}
 
 
 const currentChainId = async () => {
+  /*
+   * Possible error: 'eth_chainId' is not supported.
+   * To avoid it, If browser has more than one provider (e.g. Metamask + Coinbase) some request should be send by one of them, 
+   * not for window.ethereum.
+   * 
+   * So, you will need to use ethereumProvider
+   */
   const chainId = await window.ethereum.request({
     method: 'eth_chainId',
   });

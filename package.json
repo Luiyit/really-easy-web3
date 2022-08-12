@@ -1,18 +1,27 @@
 {
   "name": "really-easy-web3",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Wrapper to use ethereum and ether packages",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "author": "Luiyit",
-  "keywords": ["ethereum", "ether", "metamask", "web3", "blockchain"],
+  "keywords": [
+    "ethereum",
+    "ether",
+    "metamask",
+    "web3",
+    "blockchain"
+  ],
   "license": "ISC",
   "private": false,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Luiyit/really-easy-web3"
   },
-  "files": ["/dist", "README.md"],
+  "files": [
+    "/dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "rollup -c",
     "test": "jest"
@@ -35,6 +44,7 @@
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-terser": "^7.0.2",
     "styled-components": "^5.3.5",
+    "tslib": "^2.4.0",
     "typescript": "^4.6.3"
   },
   "dependencies": {

@@ -25,6 +25,7 @@ Import it in your project.\
 ### Event lister
 
 ### Todo
+- When no account connected WEB3 provider gets error
 - Finish the `readme.md` 😛
 - Exclude .map from production build
 - Use `ethers` like devDependency

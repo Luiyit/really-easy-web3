@@ -1,10 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
-import generateContract from '../../utils/ethers_actions';
+import generateContract, { IProvider } from '../../utils/ethers_actions';
 import * as wallet from '../../utils/metamask';
 
 interface IContractContext {
   contractList: any,
   getContract: Function,
+  resetContracts: Function,
 }
 
 export const ContractContext = React.createContext({} as IContractContext);
@@ -13,22 +14,26 @@ export const useContracts = () => useContext(ContractContext);
 interface IContract {
   name: string,
   address: string,
+  testFunction: string,
   abi: any,
 }
 
 interface IAccountProps {
   children: any;
   contracts: IContract[],
-  provider: string,
+  provider: IProvider,
+  deps: any[],
 }
 
-const ContractProvider = ({ children, contracts, provider }: IAccountProps) => {
+const ContractProvider = ({ children, contracts, provider, deps=[] }: IAccountProps) => {
   const [contractList, setContractList] = useState<any>({});
 
   const createContract = async (item: IContract) => {
-    const {name, address, abi} = item;
+    const {name, address, testFunction, abi} = item;
 
-    const contract = await generateContract(address, abi, provider);
+    const contract = await generateContract(address, abi, provider, testFunction);
+    if (!contract) return null;
+
     contract.blockNumber = await contract.provider.getBlockNumber();
     return { name, contract }
   }
@@ -41,7 +46,7 @@ const ContractProvider = ({ children, contracts, provider }: IAccountProps) => {
       for (let index = 0; index < contracts.length; index++) {
         const item = contracts[index];
         const contractHash = await createContract(item);
-        list.push(contractHash)
+        if(contractHash) list.push(contractHash)
       }
       
       list = list.reduce((result: any, item: IContract) => ({
@@ -52,15 +57,20 @@ const ContractProvider = ({ children, contracts, provider }: IAccountProps) => {
       setContractList(list)
     }
     setContracts();
-  }, [contracts, provider]);
+  }, [contracts, provider, ...deps]);
 
   const getContract = (name: string) => {
     return contractList[name]?.contract;
   };
 
+  const resetContracts = () => {
+    setContractList({});
+  }
+
   const contextValue: IContractContext = {
     contractList,
-    getContract
+    getContract,
+    resetContracts,
   }
 
   return (
