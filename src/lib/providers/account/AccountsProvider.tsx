@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import ethereumActions from '../../utils/ethereum_requests';
 import ethActions from '../../utils/ethereum_requests';
 import * as  wallet from '../../utils/metamask';
+import * as  providers from '../../utils/providers';
 import * as storage from './storage'
 import getInitialState, { IState } from './config';
 import registerListener, { EVENTS_TYPES } from '../../utils/ethereum_events';
@@ -21,19 +22,40 @@ interface IMetamaskState {
   isMetamaskUnlocked: boolean,
   isReady: Boolean,
 }
+
 const emptyMetamaskState: IMetamaskState = {
   isMetaMaskInstalled: false,
   isMetamaskUnlocked: false,
   isReady: false,
 }
 
+interface IEthereumState {
+  providerExists: boolean, 
+  providersName: string[],
+  isReady: Boolean,
+  isMetaMaskReady: Boolean,
+  isCoinbaseReady: Boolean,
+}
+
+const emptyEthereumState: IEthereumState = {
+  providerExists: false,
+  providersName: [],
+  isReady: false,
+  isMetaMaskReady: false,
+  isCoinbaseReady: false,
+}
+
+
+
 interface IAcctContext extends IChainState, IMetamaskState{
   default: string;
   connect: Function,
+  personalSign: Function,
   disconnect: Function,
   refreshConnection: Function,
   accounts: string[],
   loading: Boolean,
+  ethereumState: IEthereumState,
 }
 
 export const AccountContext = React.createContext({} as IAcctContext);
@@ -56,6 +78,7 @@ interface IAccountProps {
 
 // TODO: Remove all listener on unmount
 // TODO: Create Docs
+// TODO: Default providerType [metamask, coinbase]
 const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconnect, targetNetworkId }: IAccountProps) => {
   const [accounts, setAccounts] = useState<string[]>([]);
   const [loading, setLoading] = useState<Boolean>(true);
@@ -63,6 +86,8 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   const [state, setState] = useState<IState>(getInitialState());
   const [chainState, setChainState] = useState<IChainState>(emptyChainState);
   const [metamaskState, setMetamaskState] = useState<IMetamaskState>(emptyMetamaskState);
+  const [ethereumState, setEthereumState] = useState<IEthereumState>(emptyEthereumState);
+
 
   const defaultAcc = state.connected ? accounts[state.defaultAccount] : '';
 
@@ -70,7 +95,7 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   const eventsHandler = async (type: string, data: any) => {
     if (type === EVENTS_TYPES.ACCOUNT_CHANGED && (data || []).length) refreshConnection();
     if (type === EVENTS_TYPES.CHAIN_CHANGED) requestChainState();
-    if (type === EVENTS_TYPES.MESSAGE) console.log(data);;
+    if (type === EVENTS_TYPES.MESSAGE) console.info(data);;
   }
 
   useEffect(() => {
@@ -80,7 +105,7 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
 
   useEffect(() => {
     initialize();
-  }, [metamaskState.isMetamaskUnlocked]);
+  }, [ethereumState.providerExists]);
   
   const observeMetamaskUnlock = () => {
     if (intervalId) return;
@@ -99,12 +124,12 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
 
   const initialize = async () => {
     await requestMetamaskState();
-    if (!wallet.isMetaMaskInstalled())
+    await requestEthereumState();
+
+    if (!providers.exists())
       return setLoading(false)
     
     await requestAccounts();
-    console.log("Accounts")
-    console.log(accounts)
     if (accounts.length) requestChainState();
   };
 
@@ -114,6 +139,24 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
     const isReady = isMetaMaskInstalled && isMetamaskUnlocked;
     setMetamaskState({isMetaMaskInstalled, isMetamaskUnlocked, isReady});
   }
+
+  const requestEthereumState = async () => {
+    const providerExists = providers.exists(); 
+    const providersName = providers.getProviderNames();
+    const isReady = await providers.isReady();
+    const isMetaMaskReady = await providers.isMetaMaskReady();
+    const isCoinbaseReady = await providers.isCoinbaseReady();
+
+    const state:IEthereumState = {
+      providerExists,
+      providersName,
+      isReady,
+      isMetaMaskReady,
+      isCoinbaseReady,
+    }
+    setEthereumState(state);
+  };
+  
   
   const requestChainState = async () => {
     const validEthereumChain = await ethereumActions.isValidEthereumChain(targetNetworkId);
@@ -122,11 +165,14 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   }
 
   const requestAccounts = async () => {
-    const isUnlocked = await wallet.isMetamaskUnlocked();
-    if(!isUnlocked){
-      setLoading(false);
-      return observeMetamaskUnlock();
-    }
+
+    // TODO
+    // This logic should be change
+    // const isUnlocked = await wallet.isMetamaskUnlocked();
+    // if(!providers.isReady()) {
+    //   setLoading(false);
+    //   return observeMetamaskUnlock();
+    // }
 
     const accounts = await ethActions.getCurrentAccounts();
     const isFakeDisconnected = storage.isFakeDisconnected();
@@ -170,26 +216,36 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
     connect()
   }
 
-  const connect = async () => {
-    if(!metamaskState.isReady) return;
+  const connect = async (providerType: string = '') => {
+    if(!ethereumState.isReady) return;
     
+    // TODO connect directly with th provider
+
     const isFakeDisconnected = storage.isFakeDisconnected();
-    const accounts = await ethActions.requestAccounts(true, isFakeDisconnected && simulateReconnect, targetNetworkId);
+    const accounts = await ethActions.requestAccounts(true, isFakeDisconnected && simulateReconnect, targetNetworkId, providerType);
     setAccounts(accounts);
     setAccountsState(accounts);
+  }
+
+  const personalSign = async (message: string) => {
+    const signature = await ethActions.personalSign(message);
+    return signature;
   }
   
   const contextValue: IAcctContext = {
     default: defaultAcc,
     connect, 
     disconnect, 
+    personalSign,
     refreshConnection, 
     accounts, 
+    ethereumState,
     ...state, 
     ...chainState,
     ...metamaskState,
     loading,
-  }
+  };
+
   return (
     <AccountContext.Provider value={contextValue} >
       {children}

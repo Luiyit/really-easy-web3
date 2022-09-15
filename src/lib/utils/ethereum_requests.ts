@@ -1,4 +1,5 @@
 import { isNonNullChain } from "typescript";
+import { providersType, getProvider, getProviders } from './providers';
 
 declare var window: any;
 
@@ -27,23 +28,6 @@ declare var window: any;
 //     sourceError: etherError
 //   }
 
-
-const ethereumProvider = () => {
-  // Some wallet extension is installed
-  if(window.ethereum){
-
-    // More than one wallet extension is installed
-    if(window.ethereum.providers){
-      return window.ethereum.providers[0]
-    }
-
-    window.ethereum;
-  }
-
-  return null;
-}
-
-
 const currentChainId = async () => {
   /*
    * Possible error: 'eth_chainId' is not supported.
@@ -51,8 +35,10 @@ const currentChainId = async () => {
    * not for window.ethereum.
    * 
    * So, you will need to use ethereumProvider
+   * Use defaultProviderType
    */
-  const chainId = await window.ethereum.request({
+  const provider = getProvider(providersType.metamask);
+  const chainId = await provider.request({
     method: 'eth_chainId',
   });
 
@@ -71,8 +57,11 @@ const switchEthereumChain = async (targetNetworkId: string) => {
     /*
      * Possible error: MetaMask - RPC Error: Expected 0x-prefixed, un padded, non-zero hexadecimal string 'chainId'.
      * To avoid it, just make sure that the chainId is using a "0x prefixed" format.
+     * 
+     * Use defaultProviderType
      */
-    await window.ethereum.request({
+    const provider = getProvider(providersType.metamask);
+    await provider.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: targetNetworkId }],
     });
@@ -83,8 +72,10 @@ const switchEthereumChain = async (targetNetworkId: string) => {
  * Request use permission to metamask (popup)
  * @returns - (open popup)
  */
-const walletRequestPermision = async () => {
-  await window.ethereum.request({
+const walletRequestPermission = async () => {
+  const provider = getProvider(providersType.metamask);
+
+  await provider.request({
     method: "wallet_requestPermissions",
     params: [{
       eth_accounts: {}
@@ -99,10 +90,19 @@ const walletRequestPermision = async () => {
  * @param {boolean} forcePopup If is fakeLogout we should show the permission popup
  * @returns string
  */
-const requestAccounts = async (switchChain = false, forcePopup = false, targetNetworkId = '') => {
+const requestAccounts = async (
+  switchChain: boolean = false, 
+  forcePopup: boolean = false, 
+  targetNetworkId: string = '', 
+  providerType: string = ''
+) => {
+  // TODO. Use providerType [any, metamask, coinbase]
   if(forcePopup) {
-    await walletRequestPermision();
+    await walletRequestPermission();
   }
+
+  // The uniq request that did not fire error when we have more than one provider
+  // Because coinbase handles the request and present a custom popup
   const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
   if (switchChain && targetNetworkId) switchEthereumChain(targetNetworkId);
 
@@ -111,7 +111,7 @@ const requestAccounts = async (switchChain = false, forcePopup = false, targetNe
 
 
 /*
- * Check if the app have conection with RCP network
+ * Check if the app have connection with RCP network
  *
  * @returns boolean
  */
@@ -125,8 +125,17 @@ const isRcpConnected = async () => {
  * @returns string or null
  */
 const getCurrentAccounts = async () => {
-  const accounts = await window.ethereum.request({ method: 'eth_accounts' })
-  return accounts || [];
+  const providers = getProviders();
+  
+  // TODO: 
+  // Ask for providerType. 
+  // Return a hash with accounts by providers
+  for (const provider of providers) {
+    const accounts = await provider.request({ method: 'eth_accounts' });
+    if(accounts.length) return accounts;
+  }
+  
+  return [];
 }
 
 /*
@@ -134,8 +143,24 @@ const getCurrentAccounts = async () => {
  * @returns bool
  */
 const isAccountConnected = async () => {
-  const accounts = await window.ethereum.request({ method: 'eth_accounts' })
+  const accounts = await getCurrentAccounts();
   return !!accounts?.shift();
+}
+
+const personalSign = async (message:string) => {
+  
+  if(!isAccountConnected()) return false;
+
+  const provider = getProvider(providersType.metamask);
+  const accounts = await getCurrentAccounts();
+  const account = accounts?.shift();
+
+  const result = await provider.request({
+    method: 'personal_sign',
+    params: [message, account],
+  });
+
+  return result;
 }
 
 
@@ -147,5 +172,6 @@ export default {
   isRcpConnected,
   getCurrentAccounts,
   isValidEthereumChain,
-  currentChainId
+  currentChainId,
+  personalSign
 }
