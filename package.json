@@ -1,6 +1,6 @@
 {
   "name": "really-easy-web3",
-  "version": "0.2.8",
+  "version": "0.2.11",
   "description": "Wrapper to use ethereum and ether packages",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

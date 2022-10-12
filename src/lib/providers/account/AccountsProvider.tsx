@@ -178,21 +178,22 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
     const isFakeDisconnected = storage.isFakeDisconnected();
 
     /** User connected + should auto connect + Is not fake disconnected */
-    if(accounts && autoConnect && !isFakeDisconnected){
+    if((accounts && autoConnect && !isFakeDisconnected) || (!accounts && connectOnLoad)) {
       ethActions.switchEthereumChain(targetNetworkId);
       setAccounts(accounts);
+      setAccountsState(accounts);
     }
 
     /*
      * User connected + + should auto connect + Is fake disconnected
      * User not connected + connect on page load
      */
-    if((accounts && autoConnect && isFakeDisconnected) || (!accounts && connectOnLoad)){
+    if(accounts && autoConnect && isFakeDisconnected && connectOnLoad){
       const accounts = await ethActions.requestAccounts(true, isFakeDisconnected && simulateReconnect, targetNetworkId);
       setAccounts(accounts);
+      setAccountsState(accounts);
     }
     
-    setAccountsState(accounts);
     setLoading(false);
   }
 
@@ -205,15 +206,16 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
 
   }
   
-  const disconnect = () => {
-    storage.setFake(true);
+  const disconnect = (setFakeDisconnect: boolean = true) => {
+    storage.setFake(setFakeDisconnect);
     setAccounts([]);
     setState(getInitialState())
   }
 
   const refreshConnection = async () => {
-    setAccounts([]);
-    connect()
+    console.log("Refresh Connection");
+    // setAccounts([]);
+    // connect()
   }
 
   const connect = async (providerType: string = '') => {
