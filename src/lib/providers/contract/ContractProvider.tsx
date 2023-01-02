@@ -39,7 +39,7 @@ const ContractProvider = ({ children, contracts, provider, deps=[] }: IAccountPr
   }
 
   useEffect(() => {
-    if (!wallet.isMetaMaskInstalled()) return;
+    // if (!wallet.isMetaMaskInstalled()) return;
 
     const setContracts = async()=>{
       let list: any = [];
@@ -72,6 +72,9 @@ const ContractProvider = ({ children, contracts, provider, deps=[] }: IAccountPr
     getContract,
     resetContracts,
   }
+
+  console.log("contractList")
+  console.log(contractList)
 
   return (
     <ContractContext.Provider value={contextValue}>

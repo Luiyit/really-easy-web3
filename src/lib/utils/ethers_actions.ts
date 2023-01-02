@@ -10,6 +10,7 @@ export const providerList: any = {
   web3: 'WEB3', 
   localRpc: 'LOCAL_RPC',
   infuraRpc: 'INFURA_RPC',
+  customRpc: 'CUSTOM_RPC',
 };
 export const providers: string[] = Object.keys(providerList).map(key => providerList[key]);
 
@@ -20,6 +21,7 @@ export interface IProvider {
   token: string, 
   network: string,
   version: string,
+  rpc: any,
 };
 
 // https://web3py.readthedocs.io/en/stable/providers.html
@@ -43,6 +45,10 @@ const generateContract = async (address: string, abi: ContractInterface, provide
   try {
     let contractProvider = null;
     switch (provider.name) {
+      case providerList.customRpc:
+        contractProvider = provider.rpc;
+        break;
+
       case providerList.web3:
         contractProvider = await rpcs.WEB3();
         break;
