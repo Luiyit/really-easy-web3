@@ -213,7 +213,7 @@ const AccountsProvider = ({ children, connectOnLoad, autoConnect, simulateReconn
   }
 
   const refreshConnection = async () => {
-    console.log("Refresh Connection");
+    console.info("Refresh Connection");
     // setAccounts([]);
     // connect()
   }

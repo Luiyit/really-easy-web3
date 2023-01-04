@@ -28,35 +28,34 @@ interface IAccountProps {
 const ContractProvider = ({ children, contracts, provider, deps=[] }: IAccountProps) => {
   const [contractList, setContractList] = useState<any>({});
 
-  const createContract = async (item: IContract) => {
-    const {name, address, testFunction, abi} = item;
+  const createContract = (item: IContract) => {
+    const {name, address, abi} = item;
 
-    const contract = await generateContract(address, abi, provider, testFunction);
+    const contract = generateContract(address, abi, provider);
     if (!contract) return null;
 
-    contract.blockNumber = await contract.provider.getBlockNumber();
+    // TODO: SET UP LATER
+    // contract.blockNumber = await contract.provider.getBlockNumber();
     return { name, contract }
   }
 
   useEffect(() => {
     // if (!wallet.isMetaMaskInstalled()) return;
 
-    const setContracts = async()=>{
-      let list: any = [];
-      for (let index = 0; index < contracts.length; index++) {
-        const item = contracts[index];
-        const contractHash = await createContract(item);
-        if(contractHash) list.push(contractHash)
-      }
-      
-      list = list.reduce((result: any, item: IContract) => ({
-        ...result,
-        [item.name]: { ...item }
-      }), {});
-
-      setContractList(list)
+    let list: any = [];
+    for (let index = 0; index < contracts.length; index++) {
+      const item = contracts[index];
+      const contractHash = createContract(item);
+      if(contractHash) list.push(contractHash)
     }
-    setContracts();
+    
+    list = list.reduce((result: any, item: IContract) => ({
+      ...result,
+      [item.name]: { ...item }
+    }), {});
+
+    setContractList(list);
+
   }, [contracts, provider, ...deps]);
 
   const getContract = (name: string) => {
@@ -72,9 +71,6 @@ const ContractProvider = ({ children, contracts, provider, deps=[] }: IAccountPr
     getContract,
     resetContracts,
   }
-
-  console.log("contractList")
-  console.log(contractList)
 
   return (
     <ContractContext.Provider value={contextValue}>
